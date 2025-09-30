@@ -3,8 +3,8 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Constants
-const double cellSize = 20.0;
+// Constants - Reduced cell size for smaller grid and snake
+const double cellSize = 15.0;
 const Color boardBackgroundColor = Color(0xFF0A0E21);
 const Color gridColor = Colors.white24;
 const Color foodColor = Colors.red;
@@ -528,9 +528,11 @@ class SlitherDashGame extends FlameGame {
     super.render(canvas);
     if (!isRunning || isGameOver) return;
 
-    final gridPaint = Paint()..color = gridColor.withOpacity(0.2);
+    final gridPaint = Paint()
+      ..color = gridColor.withOpacity(0.2)
+      ..strokeWidth = 0.5; // Thinner grid lines
 
-    // Draw grid
+    // Draw grid with thinner lines
     for (int row = 0; row <= rows; row++) {
       canvas.drawLine(
           Offset(offsetX, offsetY + row * cellSize),
@@ -544,16 +546,20 @@ class SlitherDashGame extends FlameGame {
           gridPaint);
     }
 
-    // Draw snake with smooth movement
+    // Draw snake with smaller size and smooth movement
     for (int i = 0; i < smoothSnake.length; i++) {
       final part = smoothSnake[i];
       final isHead = i == 0;
 
+      // Reduced padding for smaller snake segments
+      final padding = isHead ? 1.0 : 1.5;
+      final segmentSize = cellSize - padding * 2;
+
       final rect = Rect.fromLTWH(
-          offsetX + part.dx * cellSize,
-          offsetY + part.dy * cellSize,
-          cellSize,
-          cellSize);
+          offsetX + part.dx * cellSize + padding,
+          offsetY + part.dy * cellSize + padding,
+          segmentSize,
+          segmentSize);
 
       final paint = Paint()
         ..shader = LinearGradient(
@@ -564,40 +570,49 @@ class SlitherDashGame extends FlameGame {
           end: Alignment.bottomRight,
         ).createShader(rect);
 
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, Radius.circular(cellSize / 4)), paint);
+      // Smaller border radius for smaller segments
+      canvas.drawRRect(RRect.fromRectAndRadius(rect, Radius.circular(segmentSize / 6)), paint);
 
       if (isHead) {
         final eyePaint = Paint()..color = Colors.black;
-        final eyeOffset = cellSize * 0.2;
-        final eyeRadius = cellSize * 0.1;
+        final eyeOffset = segmentSize * 0.2;
+        final eyeRadius = segmentSize * 0.1;
         
         // Draw eyes based on direction
         final leftEye = direction == const Offset(1, 0) || direction == const Offset(-1, 0)
             ? Offset(rect.left + eyeOffset, rect.top + eyeOffset)
             : Offset(rect.left + eyeOffset, rect.top + eyeOffset);
         final rightEye = direction == const Offset(1, 0) || direction == const Offset(-1, 0)
-            ? Offset(rect.left + cellSize - eyeOffset, rect.top + eyeOffset)
-            : Offset(rect.left + cellSize - eyeOffset, rect.top + eyeOffset);
+            ? Offset(rect.left + segmentSize - eyeOffset, rect.top + eyeOffset)
+            : Offset(rect.left + segmentSize - eyeOffset, rect.top + eyeOffset);
             
         canvas.drawCircle(leftEye, eyeRadius, eyePaint);
         canvas.drawCircle(rightEye, eyeRadius, eyePaint);
       }
     }
 
-    // Draw food with difficulty-based color
+    // Draw food with smaller size and difficulty-based color
+    final foodPadding = 2.0; // Reduced food size
+    final foodSize = cellSize - foodPadding * 2;
     final foodPaint = Paint()..color = _getDifficultyColor(difficulty.value);
     final foodRect = Rect.fromLTWH(
-        offsetX + food.dx * cellSize,
-        offsetY + food.dy * cellSize,
-        cellSize,
-        cellSize);
-    canvas.drawRect(foodRect, foodPaint);
+        offsetX + food.dx * cellSize + foodPadding,
+        offsetY + food.dy * cellSize + foodPadding,
+        foodSize,
+        foodSize);
     
-    // Add a shine effect to food
-    final shinePaint = Paint()..color = Colors.white.withOpacity(0.3);
+    // Draw food as a circle instead of rectangle for better visibility
     canvas.drawCircle(
-      Offset(foodRect.left + cellSize * 0.3, foodRect.top + cellSize * 0.3),
-      cellSize * 0.15,
+      Offset(foodRect.center.dx, foodRect.center.dy),
+      foodSize / 2,
+      foodPaint,
+    );
+    
+    // Add a smaller shine effect to food
+    final shinePaint = Paint()..color = Colors.white.withOpacity(0.4);
+    canvas.drawCircle(
+      Offset(foodRect.left + foodSize * 0.3, foodRect.top + foodSize * 0.3),
+      foodSize * 0.15,
       shinePaint,
     );
   }
