@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Constants - Reduced cell size for smaller grid and snake
@@ -49,354 +50,560 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   final SlitherDashGame game = SlitherDashGame();
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Request focus when the screen loads to capture keyboard events
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: boardBackgroundColor,
       body: SafeArea(
-        child: GestureDetector(
-          onVerticalDragUpdate: (details) {
-            if (!game.isPaused && !game.isGameOver && game.isRunning) {
-              if (details.delta.dy < 0 && game.direction != const Offset(0, 1)) {
-                game.nextDirection = const Offset(0, -1);
-              } else if (details.delta.dy > 0 && game.direction != const Offset(0, -1)) {
-                game.nextDirection = const Offset(0, 1);
-              }
-            }
+        child: RawKeyboardListener(
+          focusNode: _focusNode,
+          autofocus: true,
+          onKey: (RawKeyEvent event) {
+            game.handleKeyEvent(event);
           },
-          onHorizontalDragUpdate: (details) {
-            if (!game.isPaused && !game.isGameOver && game.isRunning) {
-              if (details.delta.dx < 0 && game.direction != const Offset(1, 0)) {
-                game.nextDirection = const Offset(-1, 0);
-              } else if (details.delta.dx > 0 && game.direction != const Offset(-1, 0)) {
-                game.nextDirection = const Offset(1, 0);
-              }
-            }
-          },
-          child: GameWidget(
-            game: game,
-            overlayBuilderMap: {
-              'MainMenu': (context, game) {
-                final slitherGame = game as SlitherDashGame;
-                return Container(
-                  color: Colors.black54,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          "Slither Dash",
-                          style: TextStyle(
-                            color: Colors.greenAccent,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ValueListenableBuilder<int>(
-                          valueListenable: slitherGame.highScore,
-                          builder: (context, value, _) {
-                            return Text(
-                              "High Score: $value",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        // Difficulty Selector
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.black38,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+          child: Stack(
+            children: [
+              // Game widget takes full screen
+              GestureDetector(
+                onVerticalDragUpdate: (details) {
+                  if (!game.isPaused && !game.isGameOver && game.isRunning) {
+                    if (details.delta.dy < 0 && game.direction != const Offset(0, 1)) {
+                      game.nextDirection = const Offset(0, -1);
+                    } else if (details.delta.dy > 0 && game.direction != const Offset(0, -1)) {
+                      game.nextDirection = const Offset(0, 1);
+                    }
+                  }
+                },
+                onHorizontalDragUpdate: (details) {
+                  if (!game.isPaused && !game.isGameOver && game.isRunning) {
+                    if (details.delta.dx < 0 && game.direction != const Offset(1, 0)) {
+                      game.nextDirection = const Offset(-1, 0);
+                    } else if (details.delta.dx > 0 && game.direction != const Offset(-1, 0)) {
+                      game.nextDirection = const Offset(1, 0);
+                    }
+                  }
+                },
+                child: GameWidget(
+                  game: game,
+                  overlayBuilderMap: {
+                    'MainMenu': (context, game) {
+                      final slitherGame = game as SlitherDashGame;
+                      return Container(
+                        color: Colors.black54,
+                        child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Text(
-                                "Difficulty",
+                                "Slither Dash",
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
+                                  color: Colors.greenAccent,
+                                  fontSize: 36,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 12),
-                              ValueListenableBuilder<GameDifficulty>(
-                                valueListenable: slitherGame.difficulty,
-                                builder: (context, currentDifficulty, _) {
-                                  return DropdownButton<GameDifficulty>(
-                                    value: currentDifficulty,
-                                    dropdownColor: Colors.grey[900],
-                                    style: const TextStyle(color: Colors.white),
-                                    onChanged: (GameDifficulty? newDifficulty) {
-                                      if (newDifficulty != null) {
-                                        slitherGame.changeDifficulty(newDifficulty);
-                                      }
-                                    },
-                                    items: GameDifficulty.values.map((difficulty) {
-                                      return DropdownMenuItem<GameDifficulty>(
-                                        value: difficulty,
-                                        child: Text(
-                                          difficulty.displayName,
-                                          style: TextStyle(
-                                            color: _getDifficultyColor(difficulty),
-                                            fontWeight: currentDifficulty == difficulty 
-                                                ? FontWeight.bold 
-                                                : FontWeight.normal,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
+                              const SizedBox(height: 20),
+                              ValueListenableBuilder<int>(
+                                valueListenable: slitherGame.highScore,
+                                builder: (context, value, _) {
+                                  return Text(
+                                    "High Score: $value",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                    ),
                                   );
                                 },
+                              ),
+                              const SizedBox(height: 20),
+                              // Difficulty Selector
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.black38,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      "Difficulty",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ValueListenableBuilder<GameDifficulty>(
+                                      valueListenable: slitherGame.difficulty,
+                                      builder: (context, currentDifficulty, _) {
+                                        return DropdownButton<GameDifficulty>(
+                                          value: currentDifficulty,
+                                          dropdownColor: Colors.grey[900],
+                                          style: const TextStyle(color: Colors.white),
+                                          onChanged: (GameDifficulty? newDifficulty) {
+                                            if (newDifficulty != null) {
+                                              slitherGame.changeDifficulty(newDifficulty);
+                                            }
+                                          },
+                                          items: GameDifficulty.values.map((difficulty) {
+                                            return DropdownMenuItem<GameDifficulty>(
+                                              value: difficulty,
+                                              child: Text(
+                                                difficulty.displayName,
+                                                style: TextStyle(
+                                                  color: _getDifficultyColor(difficulty),
+                                                  fontWeight: currentDifficulty == difficulty 
+                                                      ? FontWeight.bold 
+                                                      : FontWeight.normal,
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 8),
+                                    ValueListenableBuilder<GameDifficulty>(
+                                      valueListenable: slitherGame.difficulty,
+                                      builder: (context, difficulty, _) {
+                                        return Text(
+                                          "Speed: ${(1/difficulty.moveDelay).toStringAsFixed(1)}x | Points: ${difficulty.pointsPerFood}",
+                                          style: TextStyle(
+                                            color: _getDifficultyColor(difficulty),
+                                            fontSize: 12,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                              ElevatedButton(
+                                onPressed: () {
+                                  slitherGame.startGame();
+                                  slitherGame.overlays.remove('MainMenu');
+                                  slitherGame.overlays.add('PauseButton');
+                                  // Re-request focus when starting game
+                                  _focusNode.requestFocus();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                ),
+                                child: const Text(
+                                  "Start Game",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              // Keyboard controls hint
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      "Controls",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      "Arrow Keys or WASD\nSwipe to change direction",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    'PauseButton': (context, game) {
+                      final slitherGame = game as SlitherDashGame;
+                      return Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 30, right: 16),
+                          child: FloatingActionButton(
+                            mini: true,
+                            backgroundColor: Colors.black54,
+                            onPressed: () {
+                              slitherGame.pauseGame();
+                              slitherGame.overlays.remove('PauseButton');
+                              slitherGame.overlays.add('PauseMenu');
+                            },
+                            child: const Icon(Icons.pause, color: Colors.white),
+                          ),
+                        ),
+                      );
+                    },
+                    'PauseMenu': (context, game) {
+                      final slitherGame = game as SlitherDashGame;
+                      return Container(
+                        color: Colors.black54,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                "Paused",
+                                style: TextStyle(
+                                  color: Colors.yellow,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ValueListenableBuilder<GameDifficulty>(
+                                valueListenable: slitherGame.difficulty,
+                                builder: (context, difficulty, _) {
+                                  return Text(
+                                    "Difficulty: ${difficulty.displayName}",
+                                    style: TextStyle(
+                                      color: _getDifficultyColor(difficulty),
+                                      fontSize: 18,
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: () {
+                                  slitherGame.resumeGame();
+                                  slitherGame.overlays.remove('PauseMenu');
+                                  slitherGame.overlays.add('PauseButton');
+                                  // Re-request focus when resuming game
+                                  _focusNode.requestFocus();
+                                },
+                                child: const Text("Resume"),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: () {
+                                  slitherGame.resetGame();
+                                  slitherGame.overlays.remove('PauseMenu');
+                                  slitherGame.overlays.add('PauseButton');
+                                  // Re-request focus when restarting game
+                                  _focusNode.requestFocus();
+                                },
+                                child: const Text("Restart"),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: () {
+                                  slitherGame.quitToMenu();
+                                },
+                                child: const Text("Quit to Main Menu"),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    'GameOver': (context, game) {
+                      final slitherGame = game as SlitherDashGame;
+                      return Container(
+                        color: Colors.black54,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                "Game Over",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                "Final Score: ${slitherGame.score.value}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               ValueListenableBuilder<GameDifficulty>(
                                 valueListenable: slitherGame.difficulty,
                                 builder: (context, difficulty, _) {
                                   return Text(
-                                    "Speed: ${(1/difficulty.moveDelay).toStringAsFixed(1)}x | Points: ${difficulty.pointsPerFood}",
+                                    "Difficulty: ${difficulty.displayName}",
                                     style: TextStyle(
                                       color: _getDifficultyColor(difficulty),
-                                      fontSize: 12,
+                                      fontSize: 16,
                                     ),
                                   );
                                 },
                               ),
+                              const SizedBox(height: 12),
+                              ValueListenableBuilder<int>(
+                                valueListenable: slitherGame.highScore,
+                                builder: (context, value, _) {
+                                  return Text(
+                                    "High Score: $value",
+                                    style: const TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: () {
+                                  slitherGame.resetGame();
+                                  slitherGame.overlays.remove('GameOver');
+                                  slitherGame.overlays.add('PauseButton');
+                                  // Re-request focus when restarting game
+                                  _focusNode.requestFocus();
+                                },
+                                child: const Text("Restart"),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: () {
+                                  slitherGame.quitToMenu();
+                                },
+                                child: const Text("Quit to Main Menu"),
+                              ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 32),
-                        ElevatedButton(
-                          onPressed: () {
-                            slitherGame.startGame();
-                            slitherGame.overlays.remove('MainMenu');
-                            slitherGame.overlays.addAll(['Score', 'PauseButton']);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      );
+                    },
+                  },
+                  initialActiveOverlays: const ['MainMenu'],
+                ),
+              ),
+              
+              // Custom Score Display - Top Left Corner
+              ValueListenableBuilder<bool>(
+                valueListenable: game.isRunningNotifier,
+                builder: (context, isRunning, _) {
+                  if (!isRunning || game.isGameOver || game.isPaused) {
+                    return const SizedBox.shrink();
+                  }
+                  return Positioned(
+                    top: 30,
+                    left: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.greenAccent, width: 1.5),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Score
+                          ValueListenableBuilder<int>(
+                            valueListenable: game.score,
+                            builder: (context, scoreValue, _) {
+                              return Text(
+                                "SCORE: $scoreValue",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              );
+                            },
                           ),
-                          child: const Text(
-                            "Start Game",
-                            style: TextStyle(fontSize: 18),
+                          const SizedBox(width: 12),
+                          // Difficulty Badge
+                          ValueListenableBuilder<GameDifficulty>(
+                            valueListenable: game.difficulty,
+                            builder: (context, currentDifficulty, _) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getDifficultyColor(currentDifficulty).withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  currentDifficulty.displayName.toUpperCase(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-              'Score': (context, game) {
-                final slitherGame = game as SlitherDashGame;
-                return Align(
-                  alignment: Alignment.topCenter,
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 30),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(8),
+                  );
+                },
+              ),
+
+              // High Score Display - Top Right Corner (when not showing pause button)
+              ValueListenableBuilder<bool>(
+                valueListenable: game.isRunningNotifier,
+                builder: (context, isRunning, _) {
+                  if (!isRunning || game.isGameOver || game.isPaused) {
+                    return const SizedBox.shrink();
+                  }
+                  return Positioned(
+                    top: 30,
+                    right: 70, // Leave space for pause button
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ValueListenableBuilder<int>(
+                        valueListenable: game.highScore,
+                        builder: (context, highScoreValue, _) {
+                          return Text(
+                            "BEST: $highScoreValue",
+                            style: const TextStyle(
+                              color: Colors.greenAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ValueListenableBuilder<int>(
-                          valueListenable: slitherGame.score,
-                          builder: (context, value, _) {
-                            return Text(
-                              "Score: $value",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 16),
-                        ValueListenableBuilder<GameDifficulty>(
-                          valueListenable: slitherGame.difficulty,
-                          builder: (context, difficulty, _) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _getDifficultyColor(difficulty).withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                difficulty.displayName,
+                  );
+                },
+              ),
+
+              // Food Counter - Bottom Left Corner
+              ValueListenableBuilder<bool>(
+                valueListenable: game.isRunningNotifier,
+                builder: (context, isRunning, _) {
+                  if (!isRunning || game.isGameOver || game.isPaused) {
+                    return const SizedBox.shrink();
+                  }
+                  return Positioned(
+                    bottom: 30,
+                    left: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: _getDifficultyColor(game.difficulty.value),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ValueListenableBuilder<GameDifficulty>(
+                            valueListenable: game.difficulty,
+                            builder: (context, difficulty, _) {
+                              return Text(
+                                "+${difficulty.pointsPerFood}",
                                 style: TextStyle(
-                                  color: _getDifficultyColor(difficulty),
-                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              'PauseButton': (context, game) {
-                final slitherGame = game as SlitherDashGame;
-                return Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 30, right: 16),
-                    child: FloatingActionButton(
-                      mini: true,
-                      backgroundColor: Colors.black54,
-                      onPressed: () {
-                        slitherGame.pauseGame();
-                        slitherGame.overlays.remove('PauseButton');
-                        slitherGame.overlays.add('PauseMenu');
-                      },
-                      child: const Icon(Icons.pause, color: Colors.white),
-                    ),
-                  ),
-                );
-              },
-              'PauseMenu': (context, game) {
-                final slitherGame = game as SlitherDashGame;
-                return Container(
-                  color: Colors.black54,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          "Paused",
-                          style: TextStyle(
-                            color: Colors.yellow,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                              );
+                            },
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        ValueListenableBuilder<GameDifficulty>(
-                          valueListenable: slitherGame.difficulty,
-                          builder: (context, difficulty, _) {
-                            return Text(
-                              "Difficulty: ${difficulty.displayName}",
-                              style: TextStyle(
-                                color: _getDifficultyColor(difficulty),
-                                fontSize: 18,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () {
-                            slitherGame.resumeGame();
-                            slitherGame.overlays.remove('PauseMenu');
-                            slitherGame.overlays.add('PauseButton');
-                          },
-                          child: const Text("Resume"),
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () {
-                            slitherGame.resetGame();
-                            slitherGame.overlays.remove('PauseMenu');
-                            slitherGame.overlays.add('PauseButton');
-                          },
-                          child: const Text("Restart"),
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () {
-                            slitherGame.quitToMenu();
-                          },
-                          child: const Text("Quit to Main Menu"),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-              'GameOver': (context, game) {
-                final slitherGame = game as SlitherDashGame;
-                return Container(
-                  color: Colors.black54,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          "Game Over",
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Final Score: ${slitherGame.score.value}",
-                          style: const TextStyle(
+                  );
+                },
+              ),
+
+              // Speed Indicator - Bottom Right Corner
+              ValueListenableBuilder<bool>(
+                valueListenable: game.isRunningNotifier,
+                builder: (context, isRunning, _) {
+                  if (!isRunning || game.isGameOver || game.isPaused) {
+                    return const SizedBox.shrink();
+                  }
+                  return Positioned(
+                    bottom: 30,
+                    right: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.speed,
                             color: Colors.white,
-                            fontSize: 24,
+                            size: 16,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        ValueListenableBuilder<GameDifficulty>(
-                          valueListenable: slitherGame.difficulty,
-                          builder: (context, difficulty, _) {
-                            return Text(
-                              "Difficulty: ${difficulty.displayName}",
-                              style: TextStyle(
-                                color: _getDifficultyColor(difficulty),
-                                fontSize: 16,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        ValueListenableBuilder<int>(
-                          valueListenable: slitherGame.highScore,
-                          builder: (context, value, _) {
-                            return Text(
-                              "High Score: $value",
-                              style: const TextStyle(
-                                color: Colors.greenAccent,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () {
-                            slitherGame.resetGame();
-                            slitherGame.overlays.remove('GameOver');
-                            slitherGame.overlays.addAll(['Score', 'PauseButton']);
-                          },
-                          child: const Text("Restart"),
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () {
-                            slitherGame.quitToMenu();
-                          },
-                          child: const Text("Quit to Main Menu"),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          ValueListenableBuilder<GameDifficulty>(
+                            valueListenable: game.difficulty,
+                            builder: (context, difficulty, _) {
+                              return Text(
+                                "${(1/difficulty.moveDelay).toStringAsFixed(1)}x",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            },
-            initialActiveOverlays: const ['MainMenu'],
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -429,6 +636,7 @@ class SlitherDashGame extends FlameGame {
   ValueNotifier<int> score = ValueNotifier<int>(0);
   ValueNotifier<int> highScore = ValueNotifier<int>(0);
   ValueNotifier<GameDifficulty> difficulty = ValueNotifier<GameDifficulty>(GameDifficulty.medium);
+  ValueNotifier<bool> isRunningNotifier = ValueNotifier<bool>(false);
   bool isGameOver = false;
   bool isPaused = false;
   bool isRunning = false;
@@ -483,6 +691,7 @@ class SlitherDashGame extends FlameGame {
   void startGame() {
     resetGame();
     isRunning = true;
+    isRunningNotifier.value = true;
   }
 
   void resetGame() {
@@ -500,6 +709,7 @@ class SlitherDashGame extends FlameGame {
 
   void quitToMenu() {
     isRunning = false;
+    isRunningNotifier.value = false;
     isGameOver = false;
     isPaused = false;
     overlays.clear();
@@ -517,6 +727,39 @@ class SlitherDashGame extends FlameGame {
         food = newFood;
         break;
       }
+    }
+  }
+
+  // Handle keyboard input
+  void handleKeyEvent(RawKeyEvent event) {
+    if (!isRunning || isGameOver || isPaused) return;
+
+    if (event is RawKeyDownEvent) {
+      final logicalKey = event.logicalKey;
+
+      // Arrow keys
+      if (logicalKey == LogicalKeyboardKey.arrowUp && direction != const Offset(0, 1)) {
+        nextDirection = const Offset(0, -1);
+      } else if (logicalKey == LogicalKeyboardKey.arrowDown && direction != const Offset(0, -1)) {
+        nextDirection = const Offset(0, 1);
+      } else if (logicalKey == LogicalKeyboardKey.arrowLeft && direction != const Offset(1, 0)) {
+        nextDirection = const Offset(-1, 0);
+      } else if (logicalKey == LogicalKeyboardKey.arrowRight && direction != const Offset(-1, 0)) {
+        nextDirection = const Offset(1, 0);
+      }
+      // WASD keys
+      else if (logicalKey == LogicalKeyboardKey.keyW && direction != const Offset(0, 1)) {
+        nextDirection = const Offset(0, -1);
+      } else if (logicalKey == LogicalKeyboardKey.keyS && direction != const Offset(0, -1)) {
+        nextDirection = const Offset(0, 1);
+      } else if (logicalKey == LogicalKeyboardKey.keyA && direction != const Offset(1, 0)) {
+        nextDirection = const Offset(-1, 0);
+      } else if (logicalKey == LogicalKeyboardKey.keyD && direction != const Offset(-1, 0)) {
+        nextDirection = const Offset(1, 0);
+      }
+      
+      // Debug print to verify keys are working
+      print('Key pressed: $logicalKey, Direction: $nextDirection');
     }
   }
 
@@ -650,11 +893,11 @@ class SlitherDashGame extends FlameGame {
         newHead.dy >= rows ||
         snake.contains(newHead)) {
       isGameOver = true;
+      isRunningNotifier.value = false;
       if (score.value > highScore.value) {
         highScore.value = score.value;
         saveHighScore();
       }
-      overlays.remove('Score');
       overlays.remove('PauseButton');
       overlays.add('GameOver');
       return;
@@ -671,9 +914,15 @@ class SlitherDashGame extends FlameGame {
     }
   }
 
-  void pauseGame() => isPaused = true;
+  void pauseGame() {
+    isPaused = true;
+    isRunningNotifier.value = false;
+  }
 
-  void resumeGame() => isPaused = false;
+  void resumeGame() {
+    isPaused = false;
+    isRunningNotifier.value = true;
+  }
 
   Color _getDifficultyColor(GameDifficulty difficulty) {
     switch (difficulty) {
