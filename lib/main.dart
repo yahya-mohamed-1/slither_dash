@@ -419,60 +419,66 @@ class _GameScreenState extends State<GameScreen> {
                   if (!isRunning || game.isGameOver || game.isPaused) {
                     return const SizedBox.shrink();
                   }
-                  return Positioned(
-                    top: 30,
-                    left: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.greenAccent, width: 1.5),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Score
-                          ValueListenableBuilder<int>(
-                            valueListenable: game.score,
-                            builder: (context, scoreValue, _) {
-                              return Text(
-                                "SCORE: $scoreValue",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1,
-                                ),
-                              );
-                            },
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: game.showScoreOverlay,
+                    builder: (context, showScore, _) {
+                      if (!showScore) return const SizedBox.shrink();
+                      return Positioned(
+                        top: 30,
+                        left: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.greenAccent, width: 1.5),
                           ),
-                          const SizedBox(width: 12),
-                          // Difficulty Badge
-                          ValueListenableBuilder<GameDifficulty>(
-                            valueListenable: game.difficulty,
-                            builder: (context, currentDifficulty, _) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _getDifficultyColor(currentDifficulty).withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  currentDifficulty.displayName.toUpperCase(),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              );
-                            },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Score
+                              ValueListenableBuilder<int>(
+                                valueListenable: game.score,
+                                builder: (context, scoreValue, _) {
+                                  return Text(
+                                    "SCORE: $scoreValue",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1,
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 12),
+                              // Difficulty Badge
+                              ValueListenableBuilder<GameDifficulty>(
+                                valueListenable: game.difficulty,
+                                builder: (context, currentDifficulty, _) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _getDifficultyColor(currentDifficulty).withOpacity(0.8),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      currentDifficulty.displayName.toUpperCase(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -484,29 +490,35 @@ class _GameScreenState extends State<GameScreen> {
                   if (!isRunning || game.isGameOver || game.isPaused) {
                     return const SizedBox.shrink();
                   }
-                  return Positioned(
-                    top: 30,
-                    right: 70, // Leave space for pause button
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ValueListenableBuilder<int>(
-                        valueListenable: game.highScore,
-                        builder: (context, highScoreValue, _) {
-                          return Text(
-                            "BEST: $highScoreValue",
-                            style: const TextStyle(
-                              color: Colors.greenAccent,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: game.showHighScoreOverlay,
+                    builder: (context, showHighScore, _) {
+                      if (!showHighScore) return const SizedBox.shrink();
+                      return Positioned(
+                        top: 30,
+                        right: 70, // Leave space for pause button
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ValueListenableBuilder<int>(
+                            valueListenable: game.highScore,
+                            builder: (context, highScoreValue, _) {
+                              return Text(
+                                "BEST: $highScoreValue",
+                                style: const TextStyle(
+                                  color: Colors.greenAccent,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -518,43 +530,49 @@ class _GameScreenState extends State<GameScreen> {
                   if (!isRunning || game.isGameOver || game.isPaused) {
                     return const SizedBox.shrink();
                   }
-                  return Positioned(
-                    bottom: 30,
-                    left: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: _getDifficultyColor(game.difficulty.value),
-                              shape: BoxShape.circle,
-                            ),
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: game.showFoodCounterOverlay,
+                    builder: (context, showFoodCounter, _) {
+                      if (!showFoodCounter) return const SizedBox.shrink();
+                      return Positioned(
+                        bottom: 30,
+                        left: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 8),
-                          ValueListenableBuilder<GameDifficulty>(
-                            valueListenable: game.difficulty,
-                            builder: (context, difficulty, _) {
-                              return Text(
-                                "+${difficulty.pointsPerFood}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: _getDifficultyColor(game.difficulty.value),
+                                  shape: BoxShape.circle,
                                 ),
-                              );
-                            },
+                              ),
+                              const SizedBox(width: 8),
+                              ValueListenableBuilder<GameDifficulty>(
+                                valueListenable: game.difficulty,
+                                builder: (context, difficulty, _) {
+                                  return Text(
+                                    "+${difficulty.pointsPerFood}",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -566,40 +584,46 @@ class _GameScreenState extends State<GameScreen> {
                   if (!isRunning || game.isGameOver || game.isPaused) {
                     return const SizedBox.shrink();
                   }
-                  return Positioned(
-                    bottom: 30,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.speed,
-                            color: Colors.white,
-                            size: 16,
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: game.showSpeedOverlay,
+                    builder: (context, showSpeed, _) {
+                      if (!showSpeed) return const SizedBox.shrink();
+                      return Positioned(
+                        bottom: 30,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 6),
-                          ValueListenableBuilder<GameDifficulty>(
-                            valueListenable: game.difficulty,
-                            builder: (context, difficulty, _) {
-                              return Text(
-                                "${(1/difficulty.moveDelay).toStringAsFixed(1)}x",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              );
-                            },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.speed,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              ValueListenableBuilder<GameDifficulty>(
+                                valueListenable: game.difficulty,
+                                builder: (context, difficulty, _) {
+                                  return Text(
+                                    "${(1/difficulty.moveDelay).toStringAsFixed(1)}x",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -637,6 +661,13 @@ class SlitherDashGame extends FlameGame {
   ValueNotifier<int> highScore = ValueNotifier<int>(0);
   ValueNotifier<GameDifficulty> difficulty = ValueNotifier<GameDifficulty>(GameDifficulty.medium);
   ValueNotifier<bool> isRunningNotifier = ValueNotifier<bool>(false);
+  
+  // Overlay visibility controllers
+  ValueNotifier<bool> showScoreOverlay = ValueNotifier<bool>(true);
+  ValueNotifier<bool> showHighScoreOverlay = ValueNotifier<bool>(true);
+  ValueNotifier<bool> showFoodCounterOverlay = ValueNotifier<bool>(true);
+  ValueNotifier<bool> showSpeedOverlay = ValueNotifier<bool>(true);
+  
   bool isGameOver = false;
   bool isPaused = false;
   bool isRunning = false;
@@ -649,6 +680,12 @@ class SlitherDashGame extends FlameGame {
   // Smooth positions
   late List<Offset> smoothSnake;
   double lerpProgress = 0;
+
+  // Track food position relative to overlays
+  bool _foodUnderScoreOverlay = false;
+  bool _foodUnderHighScoreOverlay = false;
+  bool _foodUnderFoodCounterOverlay = false;
+  bool _foodUnderSpeedOverlay = false;
 
   @override
   Future<void> onLoad() async {
@@ -704,6 +741,18 @@ class SlitherDashGame extends FlameGame {
     isGameOver = false;
     isPaused = false;
     lerpProgress = 0;
+    
+    // Reset all overlay visibility
+    showScoreOverlay.value = true;
+    showHighScoreOverlay.value = true;
+    showFoodCounterOverlay.value = true;
+    showSpeedOverlay.value = true;
+    
+    _foodUnderScoreOverlay = false;
+    _foodUnderHighScoreOverlay = false;
+    _foodUnderFoodCounterOverlay = false;
+    _foodUnderSpeedOverlay = false;
+    
     spawnFood();
   }
 
@@ -727,6 +776,58 @@ class SlitherDashGame extends FlameGame {
         food = newFood;
         break;
       }
+    }
+    
+    // Check if food is under any overlay and hide that overlay
+    _checkFoodOverlap();
+  }
+
+  void _checkFoodOverlap() {
+    // Define overlay regions (approximate positions)
+    final foodScreenX = offsetX + food.dx * cellSize;
+    final foodScreenY = offsetY + food.dy * cellSize;
+    
+    // Score overlay region (top left)
+    final scoreRegion = Rect.fromLTWH(0, 0, 200, 60);
+    // High score overlay region (top right)
+    final highScoreRegion = Rect.fromLTWH(size.x - 150, 0, 150, 50);
+    // Food counter overlay region (bottom left)
+    final foodCounterRegion = Rect.fromLTWH(0, size.y - 60, 120, 60);
+    // Speed overlay region (bottom right)
+    final speedRegion = Rect.fromLTWH(size.x - 120, size.y - 60, 120, 60);
+    
+    // Check if food overlaps with any overlay region
+    final foodRect = Rect.fromLTWH(foodScreenX, foodScreenY, cellSize, cellSize);
+    
+    _foodUnderScoreOverlay = foodRect.overlaps(scoreRegion);
+    _foodUnderHighScoreOverlay = foodRect.overlaps(highScoreRegion);
+    _foodUnderFoodCounterOverlay = foodRect.overlaps(foodCounterRegion);
+    _foodUnderSpeedOverlay = foodRect.overlaps(speedRegion);
+    
+    // Update overlay visibility
+    showScoreOverlay.value = !_foodUnderScoreOverlay;
+    showHighScoreOverlay.value = !_foodUnderHighScoreOverlay;
+    showFoodCounterOverlay.value = !_foodUnderFoodCounterOverlay;
+    showSpeedOverlay.value = !_foodUnderSpeedOverlay;
+  }
+
+  void _checkFoodEaten() {
+    // If food was eaten and it was under an overlay, show that overlay again
+    if (_foodUnderScoreOverlay) {
+      showScoreOverlay.value = true;
+      _foodUnderScoreOverlay = false;
+    }
+    if (_foodUnderHighScoreOverlay) {
+      showHighScoreOverlay.value = true;
+      _foodUnderHighScoreOverlay = false;
+    }
+    if (_foodUnderFoodCounterOverlay) {
+      showFoodCounterOverlay.value = true;
+      _foodUnderFoodCounterOverlay = false;
+    }
+    if (_foodUnderSpeedOverlay) {
+      showSpeedOverlay.value = true;
+      _foodUnderSpeedOverlay = false;
     }
   }
 
@@ -757,9 +858,6 @@ class SlitherDashGame extends FlameGame {
       } else if (logicalKey == LogicalKeyboardKey.keyD && direction != const Offset(-1, 0)) {
         nextDirection = const Offset(1, 0);
       }
-      
-      // Debug print to verify keys are working
-      print('Key pressed: $logicalKey, Direction: $nextDirection');
     }
   }
 
@@ -908,6 +1006,7 @@ class SlitherDashGame extends FlameGame {
 
     if (newHead == food) {
       score.value += difficulty.value.pointsPerFood;
+      _checkFoodEaten(); // Show overlays that were hidden due to food
       spawnFood();
     } else {
       snake.removeLast();
