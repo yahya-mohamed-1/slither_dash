@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-
+// Game board dimensions
 const int rows = 20;
 const int cols = 20;
 const double cellSize = 20.0;
-
+// Colors
 const Color boardBackgroundColor = Colors.black;
 const Color gridColor = Colors.grey;
 const Color snakeColor = Colors.green;

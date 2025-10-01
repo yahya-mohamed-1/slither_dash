@@ -646,6 +646,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
+// Core Game Logic
 class SlitherDashGame extends FlameGame {
   late List<Offset> snake;
   late Offset food;
